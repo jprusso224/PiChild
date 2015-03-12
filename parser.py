@@ -16,6 +16,7 @@ symbols=75
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(4,GPIO.OUT)
+GPIO.output(4,False)
 xbee=serial.Serial('/dev/ttyUSB0', 115200) #, parity=serial.PARITY_ODD, stopbits=1)
 ardu=serial.Serial('/dev/ttyACM0', 115200, timeout=None) #0 is non-blocking mode (not a good idea)
 if (xbee.isOpen() ==  False):
