@@ -14,8 +14,8 @@ from PIL import Image
 
 symbols=75
 GPIO.setwarnings(False)
-GPIO.setmode(GPIO.BOARD)
-GPIO.setup(26,GPIO.OUT)
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(4,GPIO.OUT)
 xbee=serial.Serial('/dev/ttyUSB0', 115200) #, parity=serial.PARITY_ODD, stopbits=1)
 ardu=serial.Serial('/dev/ttyACM0', 115200, timeout=None) #0 is non-blocking mode (not a good idea)
 if (xbee.isOpen() ==  False):
@@ -38,11 +38,11 @@ def processRappelCmd(cmd):
     reply = ardu.readline()
     if reply[0] == '$':
         xbee.write(reply)
-        print 'sent reply'
+        print reply
 
 def processImageCmd(cmd):
     print 'aww snap'
-    GPIO.output(26,True)
+    GPIO.output(4,True)
     with picamera.PiCamera() as camera:
         #camera.resolution=(2592,1944)
         camera.resolution=(1280,720)
@@ -53,8 +53,9 @@ def processImageCmd(cmd):
         #im=Image.open(location)
         #im2=im.resize((1280,720),Image.ANTIALIAS)
         #im2.save(location2)
+        GPIO.output(4,False)
         im3=cv2.imread(location)
-        cv2.imwrite(location3,im3,[int(cv2.IMWRITE_JPEG_QUALITY),50])
+        cv2.imwrite(location3,im3,[int(cv2.IMWRITE_JPEG_QUALITY),85])
         with open(location3,'rb') as image_file:
             encodStr=base64.b64encode(image_file.read())
             image_file.close()
@@ -66,7 +67,6 @@ def processImageCmd(cmd):
             time.sleep(0.03)
         xbee.write(encodStr[(i+1)*symbols:])
         xbee.write('ENDOFFILE\n')
-    GPIO.output(26,False)
 
 def processDriveCmd(cmd):
     print 'vroom vroom'
