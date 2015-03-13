@@ -16,7 +16,6 @@ symbols=75
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(4,GPIO.OUT)
-GPIO.output(4,False)
 xbee=serial.Serial('/dev/ttyUSB0', 115200) #, parity=serial.PARITY_ODD, stopbits=1)
 ardu=serial.Serial('/dev/ttyACM0', 115200, timeout=None) #0 is non-blocking mode (not a good idea)
 if (xbee.isOpen() ==  False):
@@ -43,31 +42,36 @@ def processRappelCmd(cmd):
 
 def processImageCmd(cmd):
     print 'aww snap'
-    GPIO.output(4,True)
-    with picamera.PiCamera() as camera:
-        #camera.resolution=(2592,1944)
-        camera.resolution=(1280,720)
-        location='/home/pi/parser/Pics/testPic.jpg'
-        #location2='/home/pi/parser/Pics/testPic2.jpg'
-        location3='/home/pi/parser/Pics/testPic3.jpg'
-        camera.capture(location)
-        #im=Image.open(location)
-        #im2=im.resize((1280,720),Image.ANTIALIAS)
-        #im2.save(location2)
-        GPIO.output(4,False)
-        im3=cv2.imread(location)
-        cv2.imwrite(location3,im3,[int(cv2.IMWRITE_JPEG_QUALITY),85])
-        with open(location3,'rb') as image_file:
-            encodStr=base64.b64encode(image_file.read())
-            image_file.close()
-        picLength=len(encodStr)
-        numIt=picLength/symbols
-        xbee.write("$I")
-        for i in range(0, numIt):
-            xbee.write(encodStr[i*symbols:(i+1)*symbols])
-            time.sleep(0.03)
-        xbee.write(encodStr[(i+1)*symbols:])
-        xbee.write('ENDOFFILE\n')
+    ardu.write(cmd)
+    while ardu.inWaiting() < 1:
+        time.sleep(0.1)
+    reply = ardu.readline()
+    if reply[0] == '$' and reply[2] == 'P': #maybe add a timeout here later 
+        GPIO.output(4,True)
+        with picamera.PiCamera() as camera:
+            #camera.resolution=(2592,1944)
+            camera.resolution=(1280,720)
+            location='/home/pi/parser/Pics/testPic.jpg'
+            #location2='/home/pi/parser/Pics/testPic2.jpg'
+            location3='/home/pi/parser/Pics/testPic3.jpg'
+            camera.capture(location)
+            #im=Image.open(location)
+            #im2=im.resize((1280,720),Image.ANTIALIAS)
+            #im2.save(location2)
+            GPIO.output(4,False)
+            im3=cv2.imread(location)
+            cv2.imwrite(location3,im3,[int(cv2.IMWRITE_JPEG_QUALITY),85])
+            with open(location3,'rb') as image_file:
+                encodStr=base64.b64encode(image_file.read())
+                image_file.close()
+            picLength=len(encodStr)
+            numIt=picLength/symbols
+            xbee.write("$I")
+            for i in range(0, numIt):
+                xbee.write(encodStr[i*symbols:(i+1)*symbols])
+                time.sleep(0.03)
+            xbee.write(encodStr[(i+1)*symbols:])
+            xbee.write('ENDOFFILE\n')
 
 def processDriveCmd(cmd):
     print 'vroom vroom'
