@@ -16,6 +16,7 @@ symbols=75
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(4,GPIO.OUT)
+GPIO.output(4,False)
 xbee=serial.Serial('/dev/ttyUSB0', 115200) #, parity=serial.PARITY_ODD, stopbits=1)
 ardu=serial.Serial('/dev/ttyACM0', 115200, timeout=None) #0 is non-blocking mode (not a good idea)
 if (xbee.isOpen() ==  False):
@@ -46,11 +47,13 @@ def processImageCmd(cmd):
     while ardu.inWaiting() < 1:
         time.sleep(0.1)
     reply = ardu.readline()
+    print 'done moving servos'
     if reply[0] == '$' and reply[2] == 'P': #maybe add a timeout here later 
         GPIO.output(4,True)
         with picamera.PiCamera() as camera:
             #camera.resolution=(2592,1944)
             camera.resolution=(1280,720)
+            #camera.exposure_mode = 'night'
             location='/home/pi/parser/Pics/testPic.jpg'
             #location2='/home/pi/parser/Pics/testPic2.jpg'
             location3='/home/pi/parser/Pics/testPic3.jpg'
@@ -69,9 +72,12 @@ def processImageCmd(cmd):
             xbee.write("$I")
             for i in range(0, numIt):
                 xbee.write(encodStr[i*symbols:(i+1)*symbols])
-                time.sleep(0.03)
+                time.sleep(0.06) # adjust this to allow for the data to propagate through the system witout overflowing the buffer
             xbee.write(encodStr[(i+1)*symbols:])
+            xbee.write('NUMCHARACTERS')
+            xbee.write(str(picLength))
             xbee.write('ENDOFFILE\n')
+            print 'sent image to GS'
 
 def processDriveCmd(cmd):
     print 'vroom vroom'
