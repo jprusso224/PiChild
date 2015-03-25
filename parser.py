@@ -85,7 +85,7 @@ def processDriveCmd(cmd):
     send = True
     while send == True:
         while ardu.inWaiting() < 1:
-            time.sleep(0.1)
+            time.sleep(0.06)
         reply = ardu.readline()
         xbee.write(reply)
         if reply[0:3] == '$DP' or reply[0:3] == '$DF':
